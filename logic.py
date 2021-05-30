@@ -3,7 +3,7 @@ import pandas as pd
 
 def input_saving():
     while(True):
-        amount_input = raw_input("how much do you have? : ")
+        amount_input = input("how much do you have? : ")
 
         if utilities.check_number(amount_input):
             #input to csv file
@@ -28,7 +28,7 @@ def categorize(cat_num):
 def input_expense():
     while(True):
 
-        amount_input = raw_input("how much did you spend? : ")
+        amount_input = input("how much did you spend? : ")
 
         if(utilities.check_number(amount_input)):
             amount = float(amount_input)
@@ -41,7 +41,7 @@ def input_expense():
                 print("2 : Extertainment")
                 print("3 : Other shopping")
                 print("4 : Housing expense")
-                cat_input = raw_input()
+                cat_input = input()
                 cat = ""
                 if(utilities.check_number(cat_input)):
                     cat = categorize(int(cat_input))
@@ -60,7 +60,7 @@ def input_expense():
                 except:
                     print("Incorrect format try again")
 
-            comment = raw_input('Comments : ')
+            comment = input('Comments : ')
             
             print("------------------------------------")
             print("Input")
@@ -69,7 +69,7 @@ def input_expense():
             print(date.strftime("%b %d %Y"))
             print("Comment : " + str(comment))
 
-            confirm = raw_input("Confirm? y/n : ")
+            confirm = input("Confirm? y/n : ")
             if(confirm == "y"):
                 #Output to csv file
                 summary = {

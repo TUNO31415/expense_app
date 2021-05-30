@@ -22,7 +22,7 @@ while(True):
     print("4 : Exit")
     print("====================================")
 
-    option = raw_input("Select option : ")
+    option = input("Select option : ")
 
     if utilities.check_number(option):
         operation_switch(int(option))
