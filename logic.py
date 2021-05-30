@@ -53,9 +53,10 @@ def input_expense():
 
                 # Here must be input(). Because it should be tuple
                 date_input = input("Date (dd,mm,yyyy) : ")
+                date_num = date_input.split(",")
 
                 try:
-                    date = utilities.format_date(date_input)
+                    date = utilities.format_date(date_num)
                     break
                 except:
                     print("Incorrect format try again")
