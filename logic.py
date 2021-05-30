@@ -1,5 +1,7 @@
 import utilities
-import pandas as pd
+# import pandas as pd
+import csv
+import datetime
 
 def input_saving():
     while(True):
@@ -73,14 +75,19 @@ def input_expense():
             confirm = input("Confirm? y/n : ")
             if(confirm == "y"):
                 #Output to csv file
-                summary = {
-                    'Date' : date,
-                    'Category' : cat,
-                    'Amount' : amount,
-                    'Comment' : comment
-                }
-                df = pd.DataFrame(summary, columns=['Date', 'Category', 'Amount', 'Comment'])
-                df.to_csv (r'data.csv', mode='a',index = False, header=True)
+                # summary = {
+                #     'Date' : [date],
+                #     'Category' : [cat],
+                #     'Amount' : [amount],
+                #     'Comment' : [comment]
+                # }
+                # df = pd.DataFrame(summary)
+                # df.to_csv (r'data.csv', mode='a',index = False, header=True)
+
+                with open('data.csv', 'a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([date.strftime("%Y-%m-%d"), cat, amount, comment])
+
                 print("Successfully saved!")
                 print("")
                 break
