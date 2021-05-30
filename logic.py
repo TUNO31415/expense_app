@@ -1,16 +1,21 @@
 import utilities
-# import pandas as pd
 import csv
 import datetime
 
 def input_saving():
     while(True):
-        amount_input = input("how much do you have? : ")
+        amount_input = input("How much do you have? : ")
 
         if utilities.check_number(amount_input):
             #input to csv file
             amount = float(amount_input)
-            print("Successfully saved!")
+            today = datetime.date.today()
+
+            with open('data.csv', 'a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([today.strftime("%Y-%m-%d"), "Saving", amount, "", True])
+
+            print("***Successfully saved!***")
             print("")
             break
         else:
@@ -30,7 +35,7 @@ def categorize(cat_num):
 def input_expense():
     while(True):
 
-        amount_input = input("how much did you spend? : ")
+        amount_input = input("How much did you spend? : ")
 
         if(utilities.check_number(amount_input)):
             amount = float(amount_input)
@@ -69,27 +74,24 @@ def input_expense():
             print("Input")
             print("Amount : " + str(amount))
             print("Category : " + str(cat))
-            print(date.strftime("%b %d %Y"))
+            print("Date : " + date.strftime("%Y-%m-%d"))
             print("Comment : " + str(comment))
 
             confirm = input("Confirm? y/n : ")
             if(confirm == "y"):
-                #Output to csv file
-                # summary = {
-                #     'Date' : [date],
-                #     'Category' : [cat],
-                #     'Amount' : [amount],
-                #     'Comment' : [comment]
-                # }
-                # df = pd.DataFrame(summary)
-                # df.to_csv (r'data.csv', mode='a',index = False, header=True)
 
                 with open('data.csv', 'a', newline='') as file:
                     writer = csv.writer(file)
-                    writer.writerow([date.strftime("%Y-%m-%d"), cat, amount, comment])
+                    writer.writerow([date.strftime("%Y-%m-%d"), cat, -1*amount, comment, False])
 
-                print("Successfully saved!")
+                print("***Successfully saved!***")
                 print("")
+
+                option_input = input("Do you wish to add another data? [y/n]")
+
+                if(option_input == 'y'):
+                    continue
+
                 break
 
             else:
