@@ -8,7 +8,7 @@ def operation_switch(n):
     if(n == 2): #Input expense
         logic.input_expense()
     if(n == 3): #Check expense
-        print("Not implemented yet")
+        logic.check_expense()
     if(n == 4): #Exit
         sys.exit()
 

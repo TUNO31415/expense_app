@@ -1,6 +1,6 @@
 import utilities
 import csv
-import datetime
+from datetime import datetime
 
 def input_saving():
     while(True):
@@ -29,7 +29,6 @@ def categorize(cat_num):
         3 : "Necessities",
         4 : "Housing expense"
     }
-    
     return cat.get(cat_num, "Others")
 
 def input_expense():
@@ -99,3 +98,26 @@ def input_expense():
 
         else:
             print("Please provide correct numerical value")
+
+
+def check_expense():
+
+    data = []
+
+    with open('data.csv') as csv_data :
+        csv_reader = csv.reader(csv_data, delimiter=',')
+        line_count = 0
+
+        for row in csv_reader:
+            if line_count == 0:
+                line_count += 1
+                continue
+            else :
+                print(row[4] == "False")
+                if row[4] == "False":
+                    date = datetime.strptime(row[0], "%Y-%m-%d")
+                    amount = float(row[2])
+                    data.append((date, amount))
+
+    print(data)
+    return 
