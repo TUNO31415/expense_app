@@ -1,6 +1,7 @@
 import numpy as np
 from datetime import date, datetime
 
+
 def check_number(input):
     try:
         float(input)
@@ -11,6 +12,14 @@ def check_number(input):
 def format_date(lis):
     try:
         date = datetime(int(lis[2]), int(lis[1]), int(lis[0]))
+        return date
+    except:
+        raise Exception("not correct format of date")
+
+
+def format_date_discord(lis):
+    try:
+        date = datetime(int(lis[0]), int(lis[1]), int(lis[2]))
         return date
     except:
         raise Exception("not correct format of date")
@@ -26,3 +35,25 @@ def calculate_yearly(data):
 
 def calculate_monthly(data):
     return
+
+
+def categorize(cat_num):
+    cat = {
+        0 : "Food",
+        1 : "Transportation",
+        2 : "Extertainment",
+        3 : "Necessities",
+        4 : "Housing expense"
+    }
+    return cat.get(cat_num, "Others")
+
+
+def categorize_discord(opt):
+    cat = {
+        'f' : "Food",
+        't' : "Transportation",
+        'e' : "Extertainment",
+        'n' : "Necessities",
+        'h' : "Housing expense"
+    }
+    return cat.get(opt, "Others")

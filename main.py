@@ -1,14 +1,14 @@
 import utilities
-import logic
+import options
 import sys
 
 def operation_switch(n):
     if(n == 1): #Input saving
-        logic.input_saving()
+        options.input_saving()
     if(n == 2): #Input expense
-        logic.input_expense()
+        options.input_expense()
     if(n == 3): #Check expense
-        logic.check_expense()
+        options.check_expense()
     if(n == 4): #Exit
         sys.exit()
 

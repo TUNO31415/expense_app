@@ -21,16 +21,6 @@ def input_saving():
         else:
             print("Please input the correct numerical value")
 
-def categorize(cat_num):
-    cat = {
-        0 : "Food",
-        1 : "Transportation",
-        2 : "Extertainment",
-        3 : "Necessities",
-        4 : "Housing expense"
-    }
-    return cat.get(cat_num, "Others")
-
 def input_expense():
     while(True):
 
@@ -50,7 +40,7 @@ def input_expense():
                 cat_input = input()
                 cat = ""
                 if(utilities.check_number(cat_input)):
-                    cat = categorize(int(cat_input))
+                    cat = utilities.categorize(int(cat_input))
                     break
                 else :
                     print("Try again")
