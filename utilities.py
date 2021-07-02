@@ -30,11 +30,17 @@ def calculate_yearly(data):
     res = []
     for current_year in unique_years:
         yearly_sum = np.sum([amount for date, amount in data if date.year == current_year])
-        res.append(yearly_sum)
+        res.append((current_year, yearly_sum))
     return res
 
 def calculate_monthly(data):
-    return
+    unique_month = list(set([(date.year, date.month) for date, amount in data]))
+    res = []
+
+    for current in unique_month:
+        monthly_sum = np.sum([amount for date, amount in data if date.year == current[0] and date.month == current[1]])
+        res.append((current[0], current[1], monthly_sum))
+    return res
 
 
 def categorize(cat_num):
@@ -57,3 +63,21 @@ def categorize_discord(opt):
         'h' : "Housing expense"
     }
     return cat.get(opt, "Others")
+
+
+def month_to_name(num):
+    cat = {
+        1 : "Jan",
+        2 : "Feb",
+        3 : "Mar",
+        4 : "Apr",
+        5 : "May",
+        6 : "Jun",
+        7 : "Jul",
+        8 : "Aug",
+        9 : "Sep",
+        10 : "Oct",
+        11 : "Nov",
+        12 : "Dec"
+    }
+    return cat.get(num)

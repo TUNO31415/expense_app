@@ -103,11 +103,10 @@ def check_expense():
                 line_count += 1
                 continue
             else :
-                print(row[4] == "False")
                 if row[4] == "False":
                     date = datetime.strptime(row[0], "%Y-%m-%d")
                     amount = float(row[2])
                     data.append((date, amount))
 
-    print(data)
-    return 
+    # print(data)
+    return  data
