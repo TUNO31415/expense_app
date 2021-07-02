@@ -13,13 +13,10 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    # if message.author == client.user:
-    #     return
-
     if message.content.startswith('$hello'):
         await message.channel.send('やっほー！みっくだよ')
 
-    if message.content.startswith('exp'):
+    if message.content.startswith('exp') and str(message.channel) == "exp-bot":
         input_msg = message.content.split(" ")
         if len(input_msg) != 4:
             await message.channel.send('フォーマットが違うよ！')
@@ -39,8 +36,7 @@ async def on_message(message):
                     await message.channel.send("セーブ完了！お疲れ様！")
         return 
 
-    if message.content.startswith('stats'):
-        # show stats
+    if message.content.startswith('stats') and str(message.channel) == "exp-bot":
         stats = options.check_expense()
         if "y" in message.content:
             yearly_stats = utilities.calculate_yearly(stats)
@@ -60,7 +56,7 @@ async def on_message(message):
             await message.channel.send(res_str)
             return 
         
-    if message.content.startswith('help'):
+    if message.content.startswith('help') and str(message.channel) == "exp-bot":
         await message.channel.send("**Expense input** : \n exp date category price \n *Category list* \n f : Food, \n t : Transportation,\n e : Extertainment,\n n : Necessities,\n h : Housing expense \n e.g) exp 2021-6-12 f 10.95" )
         await message.channel.send("**Check stats** : \n stats (for checking monthly stats) \n stats y (for checking yearly stats)\n")
         return     
