@@ -107,6 +107,5 @@ def check_expense():
                     date = datetime.strptime(row[0], "%Y-%m-%d")
                     amount = float(row[2])
                     data.append((date, amount))
-
     # print(data)
     return  data

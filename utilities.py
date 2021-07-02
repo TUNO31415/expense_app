@@ -30,7 +30,7 @@ def calculate_yearly(data):
     res = []
     for current_year in unique_years:
         yearly_sum = np.sum([amount for date, amount in data if date.year == current_year])
-        res.append((current_year, yearly_sum))
+        res.append((current_year, round(yearly_sum, 2)))
     return res
 
 def calculate_monthly(data):
@@ -39,7 +39,7 @@ def calculate_monthly(data):
 
     for current in unique_month:
         monthly_sum = np.sum([amount for date, amount in data if date.year == current[0] and date.month == current[1]])
-        res.append((current[0], current[1], monthly_sum))
+        res.append((current[0], current[1], round(monthly_sum,2)))
     return res
 
 
