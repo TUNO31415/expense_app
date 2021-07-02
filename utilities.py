@@ -16,6 +16,7 @@ def format_date(lis):
         raise Exception("not correct format of date")
 
 def calculate_yearly(data):
+    # pick only distinct years
     unique_years = np.unique([date.year for date, amount in data])
     res = []
     for current_year in unique_years:
