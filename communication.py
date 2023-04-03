@@ -61,7 +61,7 @@ async def on_message(message):
         await message.channel.send("**Check stats** : \n stats (for checking monthly stats) \n stats y (for checking yearly stats)\n")
         return     
    
-client.run("ODYwNDQ0MTgyMTM3Mjc0MzY4.YN7VFw.-LFLV7KyPUbwwYz_vrqxdXVEJcg")
+
 
 
 
