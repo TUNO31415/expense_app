@@ -1,38 +1,47 @@
-# Expense Tracker
+# Expense App
 
-A local expense tracker built with Python and Streamlit for managing expenses, imports, category rules, and spending summaries from a single SQLite-backed dashboard.
+A local personal finance dashboard for tracking day-to-day spending, categorizing transactions, importing CSV/bank data, and reviewing trends from a single SQLite-backed app.
+
+## Overview
+
+Expense App is a lightweight Streamlit application designed for single-user local use. It helps you:
+
+- record and edit expenses manually
+- manage expense types and categories
+- apply keyword-based categorization rules
+- review imported CSV and bank data before committing it
+- see dashboard summaries and simple trend views
+- keep everything in a local SQLite database without external infrastructure
 
 ## Features
 
-- Manual expense entry and editing
+- Manual expense entry, editing, and deletion
 - Type and category management
-- Keyword-based categorization and ignore rules
+- Keyword-based category matching and ignore rules
 - CSV import review for historical data
-- Bank statement review flow with editable mapping
+- Bank statement import review with editable mapping
 - Dashboard summaries and simple trend analysis
-- Local SQLite storage in `data/expenses.db`
+- Local persistence in `data/expenses.db`
+- built with Python 3.12+, Streamlit, Pandas, and Plotly
 
-## Project structure
+## Requirements
 
-- `app.py` — app entry point and landing page
-- `pages/` — Streamlit pages for Dashboard, Expenses, Import, and Categories
-- `db.py` — database schema, seed data, and local SQLite helpers
-- `services/` — import, analytics, and categorization logic
-- `tests/` — automated checks for the database, imports, and categorizer
+- Python 3.12 or newer
+- `uv` for dependency management and running the app
 
-## Setup
+## Quick start
 
-This project uses `uv` for dependency management and runtime execution.
-
-### Install dependencies
-
-From the project root:
+From the project root, install dependencies:
 
 ```bash
 uv sync
 ```
 
-If the environment is not already created, `uv sync` will create it automatically.
+Then start the app:
+
+```bash
+uv run streamlit run app.py
+```
 
 ### Windows PowerShell
 
@@ -50,27 +59,23 @@ uv sync
 uv run streamlit run app.py
 ```
 
-## Run the app
-
-Start the app with:
-
-```bash
-uv run streamlit run app.py
-```
-
-The project also includes a launcher script:
+The repository also includes a helper script:
 
 ```bash
 bash ./run.sh
 ```
 
-This script creates a local `.venv` if needed and then runs the app. It is most convenient in Bash-based shells such as Git Bash or WSL. On PowerShell, prefer `uv run streamlit run app.py` directly.
+This script creates a local `.venv` if needed and then launches the app. On PowerShell, `uv run streamlit run app.py` is usually the simplest option.
 
-## Keyword rules
+## Project structure
 
-Rules match keywords anywhere in a transaction description, without case sensitivity. When multiple category rules match, the longest keyword wins; the larger priority number wins only when the matching keywords are the same length. A matching ignore rule suppresses the transaction regardless of category rule priority.
-
-During a Google Sheets CSV import, matching category rules appear as suggestions and must be selected per row to replace the CSV category. During a bank statement import, matching category rules preselect the type and category for review; those selections remain editable. Ignore rules exclude matching rows from either import.
+- `app.py` — app entry point and landing page
+- `pages/` — Streamlit pages for Dashboard, Expenses, Import, and Categories
+- `db.py` — database schema, seed data, and local SQLite helpers
+- `services/` — import, analytics, and categorization logic
+- `src/` — supporting application logic and helpers
+- `tests/` — automated checks for the database, importer, and categorization rules
+- `data/` — local runtime data, including the SQLite database
 
 ## Data and persistence
 
@@ -80,12 +85,31 @@ The database is created automatically on first launch at:
 data/expenses.db
 ```
 
-This is a single-user local project, so there is no external cloud service or database setup required.
+This project is intended for a single-user local workflow. There is no remote database or cloud sync layer.
 
-## Tests
+## Keyword rules
+
+Category and ignore rules match keywords anywhere in a transaction description without case sensitivity. Matching behavior works as follows:
+
+- when multiple category rules match, the longest keyword wins
+- if the keyword lengths are equal, the rule with the higher priority wins
+- an ignore rule suppresses the transaction regardless of category priority
+
+During imports:
+
+- Google Sheets CSV imports show matching category rules as suggestions and require a selection per row
+- bank statement imports preselect the matching type and category for review, while still allowing edits
+- ignore rules exclude matching rows from either import workflow
+
+## Testing
 
 Run the project tests with:
 
 ```bash
 uv run pytest
 ```
+
+## License
+
+This project is for local personal use and is not currently configured with a formal public license.
+
