@@ -46,7 +46,7 @@ uv run streamlit run app.py
 ### Windows PowerShell
 
 ```powershell
-cd "C:\Users\PC User\Documents\projects\expense_app"
+# Run these commands from the repository directory.
 uv sync
 uv run streamlit run app.py
 ```
@@ -112,4 +112,3 @@ uv run pytest
 ## License
 
 This project is for local personal use and is not currently configured with a formal public license.
-
