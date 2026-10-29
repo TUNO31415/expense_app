@@ -89,12 +89,11 @@ def test_insert_many_skips_duplicates_and_delete_batch(temp_db):
         },
     ]
 
-    inserted, skipped = db.insert_many(rows)
+    inserted, skipped, batch_id = db.insert_many(rows)
     assert inserted == 1
     assert skipped == 1
 
-    batch_id = db.get_latest_batch_id()
-    assert batch_id is not None
+    assert batch_id == db.get_latest_batch_id()
     db.delete_batch(batch_id)
     assert db.get_expenses_df().empty
 
@@ -103,7 +102,7 @@ def test_bank_import_stores_statement_fields_only(temp_db):
     category = db.get_category_by_name("Groceries")
     assert category is not None
 
-    inserted, skipped = db.insert_many(
+    inserted, skipped, _ = db.insert_many(
         [
             {
                 "date": "2026-10-01",
@@ -192,3 +191,35 @@ def test_rules_and_bank_profiles(temp_db):
     )
     assert profile_id is not None
     assert any(item["name"] == "Demo bank" for item in db.list_bank_profiles())
+
+    assert db.delete_rule(rule_id)
+    assert not any(r["keyword"] == "pizza" for r in db.list_rules())
+    assert db.delete_bank_profile(profile_id)
+    assert db.list_bank_profiles() == []
+
+
+def test_expenses_df_exposes_ids_and_cents(temp_db):
+    category = db.get_category_by_name("Rent")
+    db.add_expense(date="2026-10-02", category_id=category["id"], amount_cents=1234)
+
+    row = db.get_expenses_df().iloc[0]
+    assert row["category_id"] == category["id"]
+    assert row["amount_cents"] == 1234
+
+
+def test_latest_import_time_ignores_empty_and_other_sources(temp_db):
+    category = db.get_category_by_name("Groceries")
+    assert db.get_latest_import_time() is None
+
+    db.insert_many([], source="bank")
+    db.insert_many(
+        [{"date": "2026-10-01", "category_id": category["id"], "amount_cents": 100, "description": "csv"}],
+        source="sheet",
+    )
+    assert db.get_latest_import_time() is None
+
+    db.insert_many(
+        [{"date": "2026-10-02", "category_id": category["id"], "amount_cents": 200, "description": "bank"}],
+        source="bank",
+    )
+    assert db.get_latest_import_time() is not None

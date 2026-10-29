@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Iterable
 
 import pandas as pd
@@ -208,6 +209,89 @@ def quarter_average_heatmap(df: pd.DataFrame) -> pd.DataFrame:
     return pivot.reindex(sorted(pivot.columns), axis=1)
 
 
+def month_summary(df: pd.DataFrame, month: str) -> dict[str, object]:
+    """Summarize one YYYY-MM month, with the previous month's total for comparison."""
+    working = prepare_expense_df(df)
+    if working.empty:
+        current = working
+        previous_total = 0.0
+    else:
+        current = working[working["month"] == month]
+        previous_month = (pd.Period(month, freq="M") - 1).strftime("%Y-%m")
+        previous_total = total_spend(working[working["month"] == previous_month])
+    return {
+        "month": month,
+        "rows": current,
+        "total": total_spend(current),
+        "count": transaction_count(current),
+        "top_category": top_category(current),
+        "previous_total": previous_total,
+    }
+
+
 def type_and_category_totals(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Return totals by type and category."""
     return spend_by_type(df), spend_by_category(df)
+
+
+PERIOD_PRESETS = {"3M": 3, "6M": 6, "12M": 12}
+
+
+def period_bounds(preset: str, data_min: date, data_max: date) -> tuple[date, date]:
+    """Return the (start, end) dates for a period preset, anchored on the latest expense, not today."""
+    if preset in PERIOD_PRESETS:
+        first_month = pd.Period(data_max, freq="M") - (PERIOD_PRESETS[preset] - 1)
+        start = first_month.start_time.date()
+    elif preset == "This year":
+        start = date(data_max.year, 1, 1)
+    else:
+        start = data_min
+    return max(start, data_min), data_max
+
+
+def monthly_totals(df: pd.DataFrame, start: object = None, end: object = None) -> pd.Series:
+    """Return total spend per YYYY-MM month, zero-filled across start..end (default: the data's range)."""
+    if df.empty and (start is None or end is None):
+        return pd.Series(dtype=float)
+    start = df["date"].min() if start is None else start
+    end = df["date"].max() if end is None else end
+    months = [str(item) for item in pd.period_range(start=start, end=end, freq="M")]
+    totals = df.groupby(df["date"].dt.to_period("M").astype(str))["amount_eur"].sum() if not df.empty else pd.Series(dtype=float)
+    return totals.reindex(months, fill_value=0.0).astype(float)
+
+
+def typical_month(df: pd.DataFrame, start: object = None, end: object = None) -> dict[str, float]:
+    """Return the mean and median monthly spend, counting months without spending as zero."""
+    totals = monthly_totals(df, start, end)
+    if totals.empty:
+        return {"mean": 0.0, "median": 0.0}
+    return {"mean": float(totals.mean()), "median": float(totals.median())}
+
+
+def top_share(df: pd.DataFrame, column: str) -> tuple[str, float]:
+    """Return the largest group in `column` and its share of total spend (0..1)."""
+    if df.empty:
+        return "", 0.0
+    totals = df.groupby(column)["amount_eur"].sum().sort_values(ascending=False, kind="stable")
+    grand_total = totals.sum()
+    return str(totals.index[0]), float(totals.iloc[0] / grand_total) if grand_total else 0.0
+
+
+def top_n_with_other(totals: pd.DataFrame, n: int, label: str = "Everything else") -> pd.DataFrame:
+    """Keep the first n rows of a sorted totals table and fold the rest into one `label` row."""
+    if len(totals) <= n:
+        return totals.reset_index(drop=True)
+    key, value = totals.columns[0], totals.columns[1]
+    rest = pd.DataFrame([{key: label, value: float(totals[value].iloc[n:].sum())}])
+    return pd.concat([totals.head(n), rest], ignore_index=True)
+
+
+def period_display(label: str) -> str:
+    """Turn a period label into friendly text: 2026-Q1 -> Q1 2026, 2026-03 -> Mar 2026."""
+    text = str(label)
+    if "-Q" in text:
+        year, quarter = text.split("-Q")
+        return f"Q{quarter} {year}"
+    if len(text) == 7 and text[4] == "-":
+        return pd.Period(text, freq="M").strftime("%b %Y")
+    return text

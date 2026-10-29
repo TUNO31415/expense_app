@@ -414,7 +414,8 @@ def get_expenses_df() -> pd.DataFrame:
         query = """
             SELECT e.id, e.date, t.name AS type, c.name AS category,
                    CAST(e.amount_cents AS REAL) / 100.0 AS amount_eur,
-                   e.description, e.comments, e.source
+                   e.description, e.comments, e.source,
+                   e.category_id, e.amount_cents
             FROM expenses e
             LEFT JOIN categories c ON c.id = e.category_id
             LEFT JOIN types t ON t.id = c.type_id
@@ -431,8 +432,8 @@ def compute_import_hash(date: str, amount_cents: int, description: str | None, r
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def insert_many(rows: Iterable[dict[str, Any]], source: str = "sheet") -> tuple[int, int]:
-    """Insert rows in a single batch while skipping duplicate hashes and returning counts."""
+def insert_many(rows: Iterable[dict[str, Any]], source: str = "sheet") -> tuple[int, int, int]:
+    """Insert rows in a single batch, skipping duplicate hashes; return (inserted, skipped, batch_id)."""
     row_list = list(rows)
     with get_connection() as conn:
         batch_cursor = conn.execute(
@@ -472,7 +473,7 @@ def insert_many(rows: Iterable[dict[str, Any]], source: str = "sheet") -> tuple[
 
         conn.execute("UPDATE import_batches SET row_count = ? WHERE id = ?", (inserted, batch_id))
         conn.commit()
-        return inserted, skipped
+        return inserted, skipped, batch_id
 
 
 def delete_batch(batch_id: int) -> bool:
@@ -489,3 +490,31 @@ def get_latest_batch_id() -> int | None:
     with get_connection() as conn:
         row = conn.execute("SELECT MAX(id) AS latest_id FROM import_batches").fetchone()
         return int(row["latest_id"]) if row and row["latest_id"] is not None else None
+
+
+def get_latest_import_time(source: str | None = "bank") -> str | None:
+    """Return the UTC timestamp of the most recent non-empty import, optionally for one source."""
+    query = "SELECT MAX(imported_at) AS latest FROM import_batches WHERE row_count > 0"
+    params: tuple[Any, ...] = ()
+    if source is not None:
+        query += " AND source = ?"
+        params = (source,)
+    with get_connection() as conn:
+        row = conn.execute(query, params).fetchone()
+        return row["latest"] if row is not None else None
+
+
+def delete_rule(rule_id: int) -> bool:
+    """Delete a keyword rule."""
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM category_rules WHERE id = ?", (rule_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def delete_bank_profile(profile_id: int) -> bool:
+    """Delete a saved bank import profile."""
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM bank_profiles WHERE id = ?", (profile_id,))
+        conn.commit()
+        return cursor.rowcount > 0

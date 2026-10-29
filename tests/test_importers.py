@@ -1,4 +1,5 @@
 from services.importers import (
+    build_bank_review_rows,
     compute_import_hash,
     detect_decimal_separator,
     detect_delimiter,
@@ -176,3 +177,36 @@ def test_outgoing_only_filtering():
     assert ignored == 2
     assert outgoing[0]["amount_cents"] == 1234
     assert outgoing[1]["amount_cents"] == 850
+
+
+def test_build_bank_review_rows_applies_rules_and_flags_duplicates():
+    csv_rows = [
+        {"Datum": "20261001", "Naam": "Albert Heijn 123", "Af Bij": "Af", "Bedrag": "12,50"},
+        {"Datum": "20261001", "Naam": "Albert Heijn 123", "Af Bij": "Af", "Bedrag": "12,50"},
+        {"Datum": "20261002", "Naam": "Salary", "Af Bij": "Bij", "Bedrag": "2000,00"},
+        {"Datum": "20261003", "Naam": "Own savings transfer", "Af Bij": "Af", "Bedrag": "100,00"},
+        {"Datum": "20261004", "Naam": "Bike shop", "Af Bij": "Af", "Bedrag": "45,00"},
+        {"Datum": "not a date", "Naam": "Broken", "Af Bij": "Af", "Bedrag": "1,00"},
+    ]
+    mapping = {"date": "Datum", "amount": "Bedrag", "description": "Naam", "direction": "Af Bij"}
+    rules = [
+        {"keyword": "albert heijn", "category_id": 7, "action": "categorize", "priority": 0},
+        {"keyword": "savings transfer", "category_id": None, "action": "ignore", "priority": 0},
+    ]
+    categories = [{"id": 7, "name": "Groceries", "type_name": "Variable Costs"}]
+    stored = {
+        ("2026-10-04", 4500): [
+            {"id": 9, "date": "2026-10-04", "amount_cents": 4500, "type": "Variable Costs", "category": "Hobbies", "description": "Bike"}
+        ]
+    }
+
+    result = build_bank_review_rows(csv_rows, mapping, "%Y%m%d", rules, categories, lambda rows: stored)
+
+    assert (result["invalid"], result["ignored_incoming"], result["excluded_by_rules"]) == (1, 1, 1)
+    rows = result["rows"]
+    assert [row["amount_cents"] for row in rows] == [1250, 1250, 4500]
+    assert rows[0]["category_id"] == 7 and rows[0]["rule_keyword"] == "albert heijn"
+    assert [row["possible_duplicate"] for row in rows] == [False, True, True]
+    assert rows[1]["existing_record"] == "Same transaction appears earlier in this file."
+    assert rows[2]["existing_record"].startswith("#9 2026-10-04")
+    assert rows[2]["category_id"] is None

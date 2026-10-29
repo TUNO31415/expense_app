@@ -7,8 +7,9 @@ import io
 import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
+from services.categorizer import match_rule
 
 _CATEGORY_NUMBER_PREFIX = re.compile(r"^\s*\d+\s*[.)-]\s*")
 
@@ -273,3 +274,89 @@ def read_csv_rows(file_bytes: bytes, *, encoding: str | None = None, delimiter: 
     reader = csv.DictReader(io.StringIO(text, newline=""), delimiter=sep)
     rows = [{key: value for key, value in row.items()} for row in reader if row]
     return rows, enc, sep
+
+
+def build_bank_review_rows(
+    csv_rows: Iterable[dict[str, Any]],
+    mapping: dict[str, str | None],
+    date_format: str | None,
+    rules: Iterable[dict[str, Any]],
+    categories: Iterable[dict[str, Any]],
+    existing_matches_fn: Callable[[list[dict[str, Any]]], dict[tuple[str, int], list[dict[str, Any]]]],
+) -> dict[str, Any]:
+    """Turn raw statement rows into review rows: parse, keep outgoing, apply rules, flag duplicates.
+
+    `mapping` holds the CSV column names for date, amount, description and (optionally) direction.
+    Returns the review rows plus counts of invalid, incoming and rule-ignored rows.
+    """
+    date_col = mapping["date"]
+    amount_col = mapping["amount"]
+    description_col = mapping["description"]
+    direction_col = mapping.get("direction")
+    rule_list = list(rules)
+    category_by_id = {int(entry["id"]): entry for entry in categories}
+
+    normalized_rows = []
+    invalid = 0
+    for row in csv_rows:
+        try:
+            normalized_date = parse_date(row.get(date_col), fmt=date_format)
+            raw_amount = row.get(amount_col)
+            amount_value = parse_amount(raw_amount, decimal_sep=detect_decimal_separator(str(raw_amount or "")))
+        except ValueError:
+            invalid += 1
+            continue
+        normalized_rows.append(
+            {
+                "date": normalized_date,
+                "amount": amount_value,
+                "description": row.get(description_col, "") or "",
+                "debit_credit": row.get(direction_col) if direction_col else "",
+            }
+        )
+
+    outgoing, ignored_incoming = filter_outgoing_transactions(normalized_rows)
+
+    candidates = []
+    excluded_by_rules = 0
+    for item in outgoing:
+        rule = match_rule(str(item["description"] or ""), rule_list)
+        if rule is not None and rule.action == "ignore":
+            excluded_by_rules += 1
+            continue
+        rule_category = category_by_id.get(rule.category_id) if rule is not None and rule.category_id is not None else None
+        candidates.append(
+            {
+                "date": item["date"],
+                "description": item["description"],
+                "amount_cents": item["amount_cents"],
+                "category_id": int(rule_category["id"]) if rule_category else None,
+                "rule_keyword": rule.keyword if rule_category else None,
+            }
+        )
+
+    existing_matches = existing_matches_fn(candidates) if candidates else {}
+    seen: set[tuple[str, int]] = set()
+    for item in candidates:
+        key = (item["date"], item["amount_cents"])
+        stored = existing_matches.get(key, [])
+        repeated = key in seen
+        seen.add(key)
+        if stored:
+            item["existing_record"] = "; ".join(
+                f"#{match['id']} {match['date']} €{match['amount_cents'] / 100:.2f} "
+                f"{match['type']} / {match['category']}: {match['description']}"
+                for match in stored
+            )
+        elif repeated:
+            item["existing_record"] = "Same transaction appears earlier in this file."
+        else:
+            item["existing_record"] = ""
+        item["possible_duplicate"] = bool(stored) or repeated
+
+    return {
+        "rows": candidates,
+        "invalid": invalid,
+        "ignored_incoming": ignored_incoming,
+        "excluded_by_rules": excluded_by_rules,
+    }
